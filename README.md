@@ -33,7 +33,9 @@ Prototype job worker service that provides an API to run arbitrary Linux process
 *   Cluster setup;
 *   Configuration files.
 
+## Design Proposal 
 
+![Architecture](assets/architecture.jpg)
 
 
 
