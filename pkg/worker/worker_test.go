@@ -13,58 +13,57 @@ var w = NewWorker(NewConfig())
 func TestStartExistingCommand(t *testing.T) {
 	jobID, err := w.Start(Command{Name: "ls"})
 
-	assert.NotEmpty(t, jobID, "jobID shouldn't be empty")
-	assert.Nil(t, err, "err should be nil")
+	assert.NotEmpty(t, jobID)
+	assert.Nil(t, err)
 }
 
-func TestStartNotExisingCommand(t *testing.T) {
-	jobID, err := w.Start(Command{Name: "xpto"})
+func TestStartNotExistingCommand(t *testing.T) {
+	jobID, err := w.Start(Command{Name: "notexists"})
 
-	assert.NotEmpty(t, jobID, "jobID shouldn't be empty")
-	assert.NotNil(t, err, "err shouldn't be nil")
+	assert.NotEmpty(t, jobID)
+	assert.NotNil(t, err)
 }
 
-func TestStopProcess(t *testing.T) {
+func TestStopNotExistingProcess(t *testing.T) {
 	err := w.Stop("")
-
 	assert.Equal(t, "Job not found", err.Error(), "")
 }
 func TestStopExistingProcess(t *testing.T) {
-	jobID, _ := w.Start(Command{Name: "sleep", Args: []string{"2m"}})
-	err := w.Stop(jobID)
+	jobID, err := w.Start(Command{Name: "sleep", Args: []string{"1"}})
+	assert.NoError(t, err)
 
-	assert.NoError(t, err, "err should be nil, process can't stop")
+	err = w.Stop(jobID)
+	assert.NoError(t, err)
 }
 
 func TestQueryExistingProcess(t *testing.T) {
-	jobID, _ := w.Start(Command{Name: "sleep", Args: []string{"2"}})
-	st, err := w.Query(jobID)
+	jobID, err := w.Start(Command{Name: "sleep", Args: []string{"1"}})
+	assert.NoError(t, err)
 
-	assert.NotNil(t, st)
+	st, err := w.Query(jobID)
 	assert.False(t, st.Exited)
 	assert.Zero(t, st.ExitCode)
-	assert.NoError(t, err, "err should be nil, process can't stop")
+	assert.NoError(t, err)
 
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 2)
+
 	st, err = w.Query(jobID)
-
-	assert.NotNil(t, st)
-	assert.NoError(t, err, "err should be nil, process can't stop")
+	assert.NoError(t, err)
 	assert.True(t, st.Exited)
 	assert.Zero(t, st.ExitCode)
 }
 
 func TestQueryStoppedProcess(t *testing.T) {
-	jobID, _ := w.Start(Command{Name: "sleep", Args: []string{"1"}})
-	err := w.Stop(jobID)
+	jobID, err := w.Start(Command{Name: "ls", Args: []string{"1"}})
+	assert.NoError(t, err)
 
-	assert.NoError(t, err, "err should be nil, process can't stop")
+	err = w.Stop(jobID)
+	assert.NoError(t, err)
 
 	time.Sleep(time.Second * 2)
-	st, err := w.Query(jobID)
 
-	assert.NotNil(t, st)
-	assert.NoError(t, err, "err should be nil, process can't stop")
+	st, err := w.Query(jobID)
+	assert.NoError(t, err)
 	assert.False(t, st.Exited)
 	assert.Equal(t, -1, st.ExitCode)
 }
@@ -75,10 +74,10 @@ func TestStreamExistingCommand(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	logchan, err := w.Stream(ctx, jobID)
-
 	assert.Nil(t, err, "err should be nil")
 	assert.NotNil(t, <-logchan)
-
 	cancel()
-	w.Stop(jobID)
+
+	err = w.Stop(jobID)
+	assert.NoError(t, err)
 }

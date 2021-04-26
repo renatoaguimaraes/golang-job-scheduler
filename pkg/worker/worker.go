@@ -146,7 +146,7 @@ func (w *worker) updateJob(jobID string) {
 		// if the job is removed from map the query
 		// will no longer find the job to return it's
 		// status to the caller
-		w.jobs.Delete(jobID)
+		// w.jobs.Delete(jobID)
 	}
 	// update the job status with information about
 	// the exited process
