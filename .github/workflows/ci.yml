@@ -41,6 +41,6 @@ jobs:
     # Run vet & lint on the code
     - name: Run vet & lint
       run: |
-        go vet .
-        golint .
+        go vet github.com/renatoaguimaraes/job-scheduler/...
+        golint github.com/renatoaguimaraes/job-scheduler/...
     
