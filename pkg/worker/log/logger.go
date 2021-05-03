@@ -1,7 +1,6 @@
 package log
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -58,9 +57,8 @@ func (l *Logger) Tailf(ctx context.Context, name string) (chan string, error) {
 			}
 			close(logchan)
 		}()
-		reader := bufio.NewReader(file)
 		// reads file from the begin
-		if err := l.streamFile(ctx, reader, logchan); err != nil && err != io.EOF {
+		if err := l.streamFile(ctx, file, logchan); err != nil && err != io.EOF {
 			log.Printf("fail to read the log file: %v", err)
 			return
 		}
@@ -76,7 +74,7 @@ func (l *Logger) Tailf(ctx context.Context, name string) (chan string, error) {
 				log.Printf("%v", err)
 				return
 			}
-			if err := l.streamFile(ctx, reader, logchan); err != nil && err != io.EOF {
+			if err := l.streamFile(ctx, file, logchan); err != nil && err != io.EOF {
 				log.Printf("fail to read the log file: %v", err)
 				return
 			}
@@ -86,10 +84,10 @@ func (l *Logger) Tailf(ctx context.Context, name string) (chan string, error) {
 }
 
 // streamFile reads chunks from log file given a specific offset and send them throught the channel.
-func (l *Logger) streamFile(ctx context.Context, reader *bufio.Reader, logchan chan string) error {
+func (l *Logger) streamFile(ctx context.Context, file *os.File, logchan chan string) error {
 	for {
 		chunck := make([]byte, l.config.LogChunckSize)
-		nbytes, err := reader.Read(chunck)
+		nbytes, err := file.Read(chunck)
 		if err != nil {
 			return err
 		}

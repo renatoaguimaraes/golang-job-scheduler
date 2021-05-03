@@ -34,7 +34,7 @@ type Job struct {
 
 // IsRunning checks if the process still running.
 func (j *Job) IsRunning() bool {
-	return j.Status.ExitCode != 0 || !j.Status.Exited
+	return j.Status.ExitCode == 0 && !j.Status.Exited
 }
 
 // Status of the process.
@@ -62,7 +62,7 @@ type Worker interface {
 	//    - ID: Job identifier
 	// It returns process status and the execution error
 	// encountered.
-	Query(jobID string) (status *Status, err error)
+	Query(jobID string) (status Status, err error)
 	// Streams the process output.
 	//    - ctx: context to cancel the log stream
 	//    - ID: Job identifier
@@ -157,7 +157,7 @@ func (w *worker) Query(jobID string) (Status, error) {
 	defer w.mtx.RUnlock()
 	job, err := w.getJob(jobID)
 	if err != nil {
-		return nil, err
+		return Status{}, err
 	}
 	return *job.Status, nil
 }
