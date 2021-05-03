@@ -72,7 +72,6 @@ func (w *linuxWatcher) Watch(ctx context.Context, path string) (chan FileEvent, 
 			// read events from file descriptor and fill the event buffer
 			nbytes, err := syscall.Read(filed, buf[:])
 			if err != nil {
-				nbytes = 0
 				log.Printf("Fail to read events: %v", err)
 				return
 			}
