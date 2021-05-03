@@ -52,7 +52,7 @@ func (w *linuxWatcher) Watch(ctx context.Context, path string) (chan FileEvent, 
 	if err != nil {
 		fderr := syscall.Close(filed)
 		if fderr != nil {
-			log.Printf("Fail to close file descriptor: %v", err)
+			log.Printf("Fail to close file descriptor: %v", fderr)
 		}
 		return nil, err
 	}
