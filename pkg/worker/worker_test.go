@@ -81,10 +81,10 @@ func TestQueryStoppedProcess(t *testing.T) {
 }
 
 func TestQueryNotExistingProcess(t *testing.T) {
-	st, err := w.Query("not-exists-job-id")
+	status, err := w.Query("not-exists-job-id")
 
 	assert.Error(t, err)
-	assert.Nil(t, st)
+	assert.Equal(t, Status{}, status)
 }
 
 func TestStreamExistingProcess(t *testing.T) {
