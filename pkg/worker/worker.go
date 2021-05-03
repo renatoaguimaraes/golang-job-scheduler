@@ -152,14 +152,14 @@ func (w *worker) Stop(jobID string) error {
 
 // Query returns the process status of a specific Job.
 // If the job doesn't exitis an error will be returned.
-func (w *worker) Query(jobID string) (*Status, error) {
+func (w *worker) Query(jobID string) (Status, error) {
 	w.mtx.RLock()
 	defer w.mtx.RUnlock()
 	job, err := w.getJob(jobID)
 	if err != nil {
 		return nil, err
 	}
-	return job.Status, nil
+	return *job.Status, nil
 }
 
 // Stream reads from the log file, like 'tail -f' through
