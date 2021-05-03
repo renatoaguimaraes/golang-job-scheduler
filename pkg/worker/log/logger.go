@@ -47,7 +47,7 @@ func (l *Logger) Remove(name string) error {
 // streams his content through a channel.
 func (l *Logger) Tailf(ctx context.Context, name string) (chan string, error) {
 	file, err := os.OpenFile(l.Path(name), os.O_RDONLY, 0644)
-	if err != nil || os.IsNotExist(err) {
+	if err != nil {
 		return nil, err
 	}
 	logchan := make(chan string)
