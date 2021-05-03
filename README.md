@@ -1,9 +1,10 @@
 # Job Scheduler
 
+[![CI](https://github.com/renatoaguimaraes/job-scheduler/actions/workflows/ci.yml/badge.svg?branch=library)](https://github.com/renatoaguimaraes/job-scheduler/actions/workflows/ci.yml)
+
 ## Summary
 
 Prototype job worker service that provides an API to run arbitrary Linux processes.
-
 
 ## Overview
 
@@ -37,5 +38,18 @@ Prototype job worker service that provides an API to run arbitrary Linux process
 
 ![Architecture](assets/architecture.jpg)
 
+## Test
 
+```sh
+$ make test
+```
+## Build and run API
 
+```sh
+$ make api
+go build -o ./bin/worker-api cmd/api/main.go
+```
+
+```sh
+$ ./bin/worker-api
+```
