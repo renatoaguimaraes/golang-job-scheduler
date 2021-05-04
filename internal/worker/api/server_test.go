@@ -18,26 +18,29 @@ import (
 )
 
 func TestStartAuthnAuthz(t *testing.T) {
+	// load server credentions
 	servercred, err := loadServerCredentials()
 	assert.Nil(t, err)
-
+	// creates server
 	config := conf.Config{ServerAddress: "localhost:8080", LogFolder: os.TempDir()}
 	serv, lis, err := CreateServer(config, servercred)
 	assert.Nil(t, err)
 	defer serv.Stop()
-
+	// starts the server
 	go func() {
 		serv.Serve(lis)
 	}()
+	// waits server bind
 	time.Sleep(time.Second)
-
+	// load client credentions
 	clientcred, err := loadClientCredentials()
 	assert.Nil(t, err)
-
+	// connects to the server
 	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
 	assert.Nil(t, err)
-
+	// creates the client
 	client := proto.NewWorkerServiceClient(conn)
+	// calls admin function
 	res, err := client.Start(context.Background(), &proto.StartRequest{Name: "ls"})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, res.JobID)
