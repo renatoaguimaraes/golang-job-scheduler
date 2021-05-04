@@ -1,9 +1,10 @@
 # Job Scheduler
 
+[![CI](https://github.com/renatoaguimaraes/job-scheduler/actions/workflows/ci.yml/badge.svg?branch=library)](https://github.com/renatoaguimaraes/job-scheduler/actions/workflows/ci.yml)
+
 ## Summary
 
 Prototype job worker service that provides an API to run arbitrary Linux processes.
-
 
 ## Overview
 
@@ -37,27 +38,53 @@ Prototype job worker service that provides an API to run arbitrary Linux process
 
 ![Architecture](assets/architecture.jpg)
 
-## Build
+## Test
 
 ```sh
-$ make build
-go test -v -timeout 10s -failfast -cover goteleport.com/pkg/worker
-=== RUN   TestStartExistingCommand
---- PASS: TestStartExistingCommand (0.00s)
-=== RUN   TestStartNotExistingCommand
---- PASS: TestStartNotExistingCommand (0.00s)
-=== RUN   TestStopNotExistingProcess
---- PASS: TestStopNotExistingProcess (0.00s)
-=== RUN   TestStopExistingProcess
---- PASS: TestStopExistingProcess (0.00s)
-=== RUN   TestQueryExistingProcess
---- PASS: TestQueryExistingProcess (2.01s)
-=== RUN   TestQueryStoppedProcess
---- PASS: TestQueryStoppedProcess (2.00s)
-=== RUN   TestStreamExistingCommand
---- PASS: TestStreamExistingCommand (0.72s)
-PASS
-coverage: 90.3% of statements
-ok      goteleport.com/pkg/worker       5.368s  coverage: 90.3% of statements
+$ make test
+```
+## Build and run API
+
+```sh
+$ make api
+go build -o ./bin/worker-api cmd/api/main.go
 ```
 
+```sh
+$ ./bin/worker-api
+```
+
+## Build and run Client
+
+```sh
+$ make client
+go build -o ./bin/worker-client cmd/client/main.go
+```
+
+```sh
+$ ./bin/worker-client start "bash" "-c" "while true; do date; sleep 1; done"
+Job 9a8cb077-22da-488f-98b4-d2fb51ba4fc9 is started
+```
+
+```sh
+$ ./bin/worker-client query 9a8cb077-22da-488f-98b4-d2fb51ba4fc9
+Pid: 1494556 Exit code: 0 Exited: false
+```
+
+```sh
+$ ./bin/worker-client stream 9a8cb077-22da-488f-98b4-d2fb51ba4fc9
+Sun 02 May 2021 05:54:29 PM -03
+Sun 02 May 2021 05:54:30 PM -03
+Sun 02 May 2021 05:54:31 PM -03
+Sun 02 May 2021 05:54:32 PM -03
+Sun 02 May 2021 05:54:33 PM -03
+Sun 02 May 2021 05:54:34 PM -03
+Sun 02 May 2021 05:54:35 PM -03
+Sun 02 May 2021 05:54:36 PM -03
+Sun 02 May 2021 05:54:37 PM -03
+```
+
+```sh
+./bin/worker-client stop 9a8cb077-22da-488f-98b4-d2fb51ba4fc9
+Job 79d95817-7228-4c36-8054-6c29513841b4 has been stopped
+```

@@ -1,0 +1,43 @@
+syntax = "proto3";
+option go_package = "github.com/renatoaguimaraes/job-scheduler/internal/worker";
+
+message StartRequest {
+  string name = 1;
+  repeated string args = 2;
+}
+
+message StartResponse {
+  string jobID = 1;
+}
+
+message StopRequest {
+  string jobID = 1;
+}
+
+message StopResponse {
+}
+
+message QueryRequest {
+  string jobID = 1;
+}
+
+message QueryResponse {
+  int32 pid = 1;
+  int32 exitCode = 2;
+  bool exited = 3;
+}
+
+message StreamRequest {
+  string jobID = 1;
+}
+
+message StreamResponse {
+  string output = 1;
+}
+
+service WorkerService {
+  rpc Start(StartRequest) returns (StartResponse);
+  rpc Stop(StopRequest) returns (StopResponse);
+  rpc Query(QueryRequest) returns (QueryResponse);
+  rpc Stream(StreamRequest) returns (stream StreamResponse);
+}

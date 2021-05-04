@@ -1,2 +1,8 @@
-build:
-	go test -v -timeout 10s -failfast -cover goteleport.com/pkg/worker
+test:
+	go test -race -v -timeout 30s -failfast -cover github.com/renatoaguimaraes/job-scheduler/...
+
+api:
+	go build -o ./bin/worker-api cmd/api/main.go
+
+client:
+	go build -o ./bin/worker-client cmd/client/main.go

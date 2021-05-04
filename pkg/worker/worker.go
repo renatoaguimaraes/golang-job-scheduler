@@ -3,19 +3,22 @@ package worker
 import (
 	"context"
 	"errors"
-	"os"
+	"fmt"
+	logger "log"
 	"os/exec"
 	"sync"
 	"syscall"
 
 	"github.com/google/uuid"
+	"github.com/renatoaguimaraes/job-scheduler/pkg/worker/conf"
+	"github.com/renatoaguimaraes/job-scheduler/pkg/worker/log"
 )
 
 // Command is a job request with the program name and arguments.
 type Command struct {
-	// Command name
+	// Name program path/name
 	Name string
-	// Command arguments
+	// Args program arguments
 	Args []string
 }
 
@@ -27,6 +30,11 @@ type Job struct {
 	Cmd *exec.Cmd
 	// Status of the process.
 	Status *Status
+}
+
+// IsRunning checks if the process still running.
+func (j *Job) IsRunning() bool {
+	return j.Status.ExitCode == 0 && !j.Status.Exited
 }
 
 // Status of the process.
@@ -63,101 +71,115 @@ type Worker interface {
 	Stream(ctx context.Context, jobID string) (logchan chan string, err error)
 }
 
-// NewLinuxWorker creates a new Worker instance for Linux programs.
-func NewWorker(config Config) Worker {
+// NewWorker creates a new Worker instance.
+func NewWorker(config conf.Config) Worker {
 	return &worker{
-		logger: NewLogger(config),
+		logger: log.NewLogger(config),
+		jobs:   make(map[string]*Job),
 	}
 }
 
 // worker implementation.
 type worker struct {
-	logger Logger
-	jobs   sync.Map
+	// logger is responsible to handle the
+	// stdout and stderr of a running process
+	logger log.Logger
+	// jobs is concurrency safe map to store
+	// the requested jobs
+	jobs map[string]*Job
+	// mtx to control jobs concurret access
+	mtx sync.RWMutex
 }
 
-func (w *worker) Start(command Command) (jobID string, err error) {
+// Start runs a Linux single command with arguments.
+// If the command runs with success, a Job identifier will be returned.
+// A log file will be created with the Job id name to capture the stdout and stderr
+// of a running process.
+// To get the process status, the Job request will be stored in memory,
+// and a goroutine will be launched to update the job status when the process is finished.
+func (w *worker) Start(command Command) (string, error) {
 	cmd := exec.Command(command.Name, command.Args...)
-	jobID = uuid.NewString()
+	jobID := uuid.NewString()
 	logfile, err := w.logger.Create(jobID)
 	if err != nil {
-		return
+		return jobID, err
 	}
 	// redirect the stdout and stderr to the log file
 	cmd.Stdout = logfile
 	cmd.Stderr = logfile
 	if err = cmd.Start(); err != nil {
-		return
+		w.logger.Remove(jobID)
+		return jobID, err
 	}
 	// create and store the job
-	job := w.createJob(jobID, cmd)
-	// update the job status in background after
-	// the process exit
-	go w.updateJob(job.ID)
-	return
+	w.mtx.Lock()
+	defer w.mtx.Unlock()
+	job := Job{ID: jobID, Cmd: cmd, Status: &Status{Pid: cmd.Process.Pid}}
+	w.jobs[jobID] = &job
+	// update the job status in background
+	go func() {
+		if err := job.Cmd.Wait(); err != nil {
+			logger.Printf("Command execution fails, %v", err)
+		}
+		// update the job status with information about
+		// the exited process
+		status := Status{
+			Pid:      job.Cmd.ProcessState.Pid(),
+			ExitCode: job.Cmd.ProcessState.ExitCode(),
+			Exited:   job.Cmd.ProcessState.Exited(),
+		}
+		w.mtx.Lock()
+		job.Status = &status
+		w.mtx.Unlock()
+	}()
+	return jobID, nil
 }
 
-func (w *worker) Stop(jobID string) (err error) {
+// Stop terminates a running Job gracefully sending a SIGTERM to the process.
+// If the job doesn't exitis an error will be returned.
+func (w *worker) Stop(jobID string) error {
+	w.mtx.RLock()
+	defer w.mtx.RUnlock()
 	job, err := w.getJob(jobID)
 	if err != nil {
-		return
+		return err
 	}
-	proc, err := os.FindProcess(job.Status.Pid)
-	if err != nil {
-		return
+	if job.IsRunning() {
+		return job.Cmd.Process.Signal(syscall.SIGTERM)
 	}
-	// kills the process gracefully
-	return proc.Signal(syscall.SIGTERM)
+	return errors.New("the process is already finished")
 }
 
-func (w *worker) Query(jobID string) (status Status, err error) {
+// Query returns the process status of a specific Job.
+// If the job doesn't exitis an error will be returned.
+func (w *worker) Query(jobID string) (Status, error) {
+	w.mtx.RLock()
+	defer w.mtx.RUnlock()
 	job, err := w.getJob(jobID)
 	if err != nil {
-		return
+		return Status{}, err
 	}
-	status = *job.Status
-	return
+	return *job.Status, nil
 }
 
-func (w *worker) Stream(ctx context.Context, jobID string) (logchan chan string, err error) {
+// Stream reads from the log file, like 'tail -f' through
+// a channel. If the context is canceled the channel will
+// be closed and the tailing will be stopped.
+func (w *worker) Stream(ctx context.Context, jobID string) (chan string, error) {
+	w.mtx.RLock()
 	job, err := w.getJob(jobID)
+	w.mtx.RUnlock()
 	if err != nil {
-		return
+		return nil, err
 	}
 	return w.logger.Tailf(ctx, job.ID)
 }
 
-func (w *worker) createJob(jobID string, cmd *exec.Cmd) *Job {
-	job := &Job{ID: jobID, Cmd: cmd, Status: &Status{Pid: cmd.Process.Pid}}
-	w.jobs.Store(jobID, job)
-	return job
-}
-
-func (w *worker) updateJob(jobID string) {
-	job, err := w.getJob(jobID)
-	if err != nil {
-		return
-	}
-	cmd := job.Cmd
-	if err := cmd.Wait(); err == nil {
-		// can be a good place to delete the log file
-		// after process exit with success
-		w.logger.Remove(jobID)
-		// if the job is removed from map the query
-		// will no longer find the job to return it's
-		// status to the caller
-		// w.jobs.Delete(jobID)
-	}
-	// update the job status with information about
-	// the exited process
-	job.Status.ExitCode = cmd.ProcessState.ExitCode()
-	job.Status.Exited = cmd.ProcessState.Exited()
-}
-
+// getJob helper to get a job given an id.
 func (w *worker) getJob(jobID string) (*Job, error) {
-	value, ok := w.jobs.Load(jobID)
+	job, ok := w.jobs[jobID]
 	if !ok {
-		return nil, errors.New("Job not found")
+		return nil, fmt.Errorf("Job %v not found", jobID)
 	}
-	return value.(*Job), nil
+	return job, nil
 }
