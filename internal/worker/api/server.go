@@ -66,6 +66,7 @@ func StartServer(conf conf.Config) error {
 	if err != nil {
 		return err
 	}
+	defer lis.Close()
 	if err := serv.Serve(lis); err != nil {
 		return err
 	}
