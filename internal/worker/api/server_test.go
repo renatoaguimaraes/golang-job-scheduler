@@ -18,7 +18,7 @@ import (
 )
 
 func TestStartAuthnAuthzAdminUser(t *testing.T) {
-	// load server credentions
+	// load server credentials
 	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
 	assert.Nil(t, err)
 	// creates server
@@ -32,7 +32,7 @@ func TestStartAuthnAuthzAdminUser(t *testing.T) {
 	}()
 	// waits server bind
 	time.Sleep(time.Second)
-	// load client credentions
+	// load client credentials
 	clientcred, err := loadClientCredentials(serverca, admincert, adminkey)
 	assert.Nil(t, err)
 	// connects to the server
