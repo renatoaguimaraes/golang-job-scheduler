@@ -44,11 +44,12 @@ func authorize(ctx context.Context, method string) error {
 	}
 	// access the leaf certificate to get user roles
 	certs := tlsInfo.State.VerifiedChains
-	// TODO validate
-	peercert := certs[0][0]
+	if len(certs) == 0 || len(certs[0]) == 0 {
+		return errors.New("missing certificate chain")
+	}
 	// find user roles from certificate extensions
 	var roles []string
-	for _, ext := range peercert.Extensions {
+	for _, ext := range certs[0][0].Extensions {
 		if oid := OidToString(ext.Id); IsOidRole(oid) {
 			roles = ParseRoles(string(ext.Value))
 			break
