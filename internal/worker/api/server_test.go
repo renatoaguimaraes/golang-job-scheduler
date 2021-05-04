@@ -19,7 +19,7 @@ import (
 
 func TestStartAuthnAuthz(t *testing.T) {
 	// load server credentions
-	servercred, err := loadServerCredentials()
+	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
 	assert.Nil(t, err)
 	// creates server
 	config := conf.Config{ServerAddress: "localhost:8080", LogFolder: os.TempDir()}
@@ -33,7 +33,7 @@ func TestStartAuthnAuthz(t *testing.T) {
 	// waits server bind
 	time.Sleep(time.Second)
 	// load client credentions
-	clientcred, err := loadClientCredentials()
+	clientcred, err := loadClientCredentials(serverca, clientcert, clientkey)
 	assert.Nil(t, err)
 	// connects to the server
 	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
@@ -46,12 +46,12 @@ func TestStartAuthnAuthz(t *testing.T) {
 	assert.NotEmpty(t, res.JobID)
 }
 
-func loadServerCredentials() (credentials.TransportCredentials, error) {
+func loadServerCredentials(ca, cert, key []byte) (credentials.TransportCredentials, error) {
 	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM(clientca) {
+	if !certPool.AppendCertsFromPEM(ca) {
 		return nil, fmt.Errorf("failed to add client CA's certificate")
 	}
-	serverCert, err := tls.X509KeyPair(servercert, serverkey)
+	serverCert, err := tls.X509KeyPair(cert, key)
 	if err != nil {
 		return nil, err
 	}
@@ -63,12 +63,12 @@ func loadServerCredentials() (credentials.TransportCredentials, error) {
 	return credentials.NewTLS(config), nil
 }
 
-func loadClientCredentials() (credentials.TransportCredentials, error) {
+func loadClientCredentials(ca, cert, key []byte) (credentials.TransportCredentials, error) {
 	certPool := x509.NewCertPool()
 	if !certPool.AppendCertsFromPEM(serverca) {
-		return nil, errors.New("failed to add server CA's certificate")
+		return nil, errors.New("failed to add CA's certificate")
 	}
-	clientCert, err := tls.X509KeyPair(clientcert, clientkey)
+	clientCert, err := tls.X509KeyPair(cert, key)
 	if err != nil {
 		return nil, err
 	}
