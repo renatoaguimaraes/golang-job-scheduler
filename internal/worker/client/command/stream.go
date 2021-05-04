@@ -2,7 +2,7 @@ package command
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"os/signal"
 
@@ -12,7 +12,6 @@ import (
 
 type StreamCommand struct {
 	client proto.WorkerServiceClient
-	args   []string
 }
 
 func NewStreamCommand(client proto.WorkerServiceClient) Runner {
@@ -22,9 +21,12 @@ func NewStreamCommand(client proto.WorkerServiceClient) Runner {
 }
 
 func (c *StreamCommand) Run(args []string) error {
+	if len(args) < 1 {
+		return errors.New("you must pass an argument")
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	command := proto.StreamRequest{
-		JobID: c.args[0],
+		JobID: args[0],
 	}
 	res, err := c.client.Stream(ctx, &command, grpc.WaitForReady(true))
 	if err != nil {
@@ -36,7 +38,6 @@ func (c *StreamCommand) Run(args []string) error {
 		for {
 			out, err := res.Recv()
 			if err != nil {
-				os.Stderr.WriteString(fmt.Sprintf("%v\n", err))
 				return
 			}
 			os.Stdout.WriteString(out.Output)

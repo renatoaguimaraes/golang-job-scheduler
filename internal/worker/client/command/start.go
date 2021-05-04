@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -12,7 +13,6 @@ import (
 
 type StartCommand struct {
 	client proto.WorkerServiceClient
-	args   []string
 }
 
 func NewStartCommand(client proto.WorkerServiceClient) Runner {
@@ -22,11 +22,18 @@ func NewStartCommand(client proto.WorkerServiceClient) Runner {
 }
 
 func (c *StartCommand) Run(args []string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
+	if len(args) < 1 {
+		return errors.New("you must pass a program name")
+	}
+	var cargs []string
+	if len(args) > 1 {
+		cargs = append(cargs, args[1:]...)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	command := proto.StartRequest{
 		Name: args[0],
-		Args: args[1:],
+		Args: cargs,
 	}
 	res, err := c.client.Start(ctx, &command, grpc.WaitForReady(true))
 	if err != nil {

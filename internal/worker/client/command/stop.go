@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -12,7 +13,6 @@ import (
 
 type StopCommand struct {
 	client proto.WorkerServiceClient
-	args   []string
 }
 
 func NewStopCommand(client proto.WorkerServiceClient) Runner {
@@ -22,10 +22,13 @@ func NewStopCommand(client proto.WorkerServiceClient) Runner {
 }
 
 func (c *StopCommand) Run(args []string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
+	if len(args) < 1 {
+		return errors.New("you must pass an argument")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	command := proto.StopRequest{
-		JobID: c.args[0],
+		JobID: args[0],
 	}
 	_, err := c.client.Stop(ctx, &command, grpc.WaitForReady(true))
 	if err != nil {

@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -21,7 +22,10 @@ func NewQueryCommand(client proto.WorkerServiceClient) Runner {
 }
 
 func (c *QueryCommand) Run(args []string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
+	if len(args) < 1 {
+		return errors.New("you must pass an argument")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	command := proto.QueryRequest{
 		JobID: args[0],
