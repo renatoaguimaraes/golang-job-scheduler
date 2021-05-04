@@ -18,7 +18,7 @@ type Runner interface {
 
 func Execute(config conf.Config, args []string) {
 	if len(args) < 1 {
-		os.Stdout.WriteString("you must pass a command")
+		os.Stderr.WriteString("you must pass a command")
 		return
 	}
 	c := client.NewWorkerClient(config)
