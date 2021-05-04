@@ -76,7 +76,7 @@ func TestStartAuthnAuthzUser(t *testing.T) {
 	assert.NotNil(t, err)
 	stat, ok := status.FromError(err)
 	assert.True(t, ok)
-	assert.Equal(t, "unauthorized, user does not have privileges enough", stat.Proto().GetMessage())
+	assert.Equal(t, "unauthorized, user does not have privileges enough", stat.Message())
 	assert.Nil(t, res)
 }
 
@@ -107,8 +107,8 @@ func TestUntrustedUser(t *testing.T) {
 	assert.NotNil(t, err)
 	stat, ok := status.FromError(err)
 	assert.True(t, ok)
-	assert.Equal(t, int32(codes.Unavailable), stat.Proto().GetCode())
-	assert.Equal(t, "connection closed", stat.Proto().GetMessage())
+	assert.Equal(t, codes.Unavailable, stat.Code())
+	assert.Equal(t, "connection closed", stat.Message())
 	assert.Nil(t, res)
 }
 
