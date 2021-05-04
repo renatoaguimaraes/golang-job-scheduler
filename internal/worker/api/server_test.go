@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/renatoaguimaraes/job-scheduler/internal/worker/proto"
 	"github.com/renatoaguimaraes/job-scheduler/pkg/worker/conf"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -22,53 +22,41 @@ import (
 var config = conf.Config{ServerAddress: "localhost:8080", LogFolder: os.TempDir()}
 
 func TestStartAuthnAuthzAdminUser(t *testing.T) {
-	// load server credentials
-	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
-	assert.Nil(t, err)
 	// creates server
-	serv, lis, err := CreateServer(config, servercred)
-	assert.Nil(t, err)
+	serv := createTestServer(t, clientca, servercert, serverkey)
 	defer serv.Stop()
-	// starts the server
-	go func() {
-		serv.Serve(lis)
-	}()
-	// waits server bind
-	time.Sleep(time.Second)
 	// load client credentials
 	clientcred, err := loadClientCredentials(serverca, admincert, adminkey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	// connects to the server
 	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	defer func() {
+		err := conn.Close()
+		require.NoError(t, err)
+	}()
 	// creates the client
 	client := proto.NewWorkerServiceClient(conn)
 	// calls admin function
 	res, err := client.Start(context.Background(), &proto.StartRequest{Name: "ls"})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, res.JobID)
 }
 
 func TestStartAuthnAuthzUnauthorizedUser(t *testing.T) {
-	// load server credentials
-	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
-	assert.Nil(t, err)
 	// creates server
-	serv, lis, err := CreateServer(config, servercred)
-	assert.Nil(t, err)
+	serv := createTestServer(t, clientca, servercert, serverkey)
 	defer serv.Stop()
-	// starts the server
-	go func() {
-		serv.Serve(lis)
-	}()
-	// waits server bind
-	time.Sleep(time.Second)
 	// load client credentials
 	clientcred, err := loadClientCredentials(serverca, usercert, userkey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	// connects to the server
 	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	defer func() {
+		err := conn.Close()
+		require.NoError(t, err)
+	}()
 	// creates the client
 	client := proto.NewWorkerServiceClient(conn)
 	// calls admin function
@@ -80,26 +68,22 @@ func TestStartAuthnAuthzUnauthorizedUser(t *testing.T) {
 	assert.Nil(t, res)
 }
 
+// Utilities
+
 func TestUntrustedUser(t *testing.T) {
-	// load server credentials
-	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
-	assert.Nil(t, err)
 	// creates server
-	serv, lis, err := CreateServer(config, servercred)
-	assert.Nil(t, err)
+	serv := createTestServer(t, clientca, servercert, serverkey)
 	defer serv.Stop()
-	// starts the server
-	go func() {
-		serv.Serve(lis)
-	}()
-	// waits server bind
-	time.Sleep(time.Second)
 	// load client credentials
 	clientcred, err := loadClientCredentials(serverca, unauthcert, unauthkey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	// connects to the server
 	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	defer func() {
+		err := conn.Close()
+		require.NoError(t, err)
+	}()
 	// creates the client
 	client := proto.NewWorkerServiceClient(conn)
 	// calls admin function
@@ -108,8 +92,21 @@ func TestUntrustedUser(t *testing.T) {
 	stat, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, codes.Unavailable, stat.Code())
-	assert.Equal(t, "connection closed", stat.Message())
 	assert.Nil(t, res)
+}
+
+func createTestServer(t *testing.T, ca, cert, key []byte) *grpc.Server {
+	// load server credentials
+	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
+	require.NoError(t, err)
+	// creates server
+	serv, lis, err := createServer(config, servercred)
+	require.NoError(t, err)
+	// starts the server
+	go func() {
+		serv.Serve(lis)
+	}()
+	return serv
 }
 
 func loadServerCredentials(ca, cert, key []byte) (credentials.TransportCredentials, error) {
