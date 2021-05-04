@@ -39,24 +39,33 @@ func loadTLSCredentials(conf conf.Config) (credentials.TransportCredentials, err
 	return credentials.NewTLS(config), nil
 }
 
-func StartGRPCServer(conf conf.Config) error {
+func CreateServer(conf conf.Config, cred credentials.TransportCredentials) (*grpc.Server, net.Listener, error) {
 	lis, err := net.Listen("tcp", conf.ServerAddress)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	tlsCredentials, err := loadTLSCredentials(conf)
-	if err != nil {
-		return err
-	}
+
 	grpcServer := grpc.NewServer(
-		grpc.Creds(tlsCredentials),
+		grpc.Creds(cred),
 		grpc.UnaryInterceptor(UnaryAuthInterceptor),
 		grpc.StreamInterceptor(StreamAuthInterceptor),
 	)
 	proto.RegisterWorkerServiceServer(grpcServer, &workerServer{
 		Worker: worker.NewWorker(conf),
 	})
-	if err := grpcServer.Serve(lis); err != nil {
+	return grpcServer, lis, nil
+}
+
+func StartServer(conf conf.Config) error {
+	cred, err := loadTLSCredentials(conf)
+	if err != nil {
+		return err
+	}
+	serv, lis, err := CreateServer(conf, cred)
+	if err != nil {
+		return err
+	}
+	if err := serv.Serve(lis); err != nil {
 		return err
 	}
 	return nil

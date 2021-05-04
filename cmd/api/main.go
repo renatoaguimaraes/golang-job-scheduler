@@ -15,7 +15,7 @@ func main() {
 	flag.StringVar(&config.ServerCertificate, "cert", "cert/server-cert.pem", "server cert path")
 	flag.StringVar(&config.ServerKey, "key", "cert/server-key.pem", "server key path")
 	flag.Parse()
-	if err := api.StartGRPCServer(config); err != nil {
+	if err := api.StartServer(config); err != nil {
 		log.Printf("fail to start server, %v", err)
 	}
 }
