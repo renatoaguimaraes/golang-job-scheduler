@@ -5,15 +5,17 @@ import (
 	"errors"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 )
 
 // UnaryAuthInterceptor intercept unary calls to authorize the user
 // based on certification extension oid 1.2.840.10070.8.1.
 func UnaryAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	if err := authorize(ctx, info.FullMethod); err != nil {
-		return nil, err
+		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 	return handler(ctx, req)
 }
@@ -22,7 +24,7 @@ func UnaryAuthInterceptor(ctx context.Context, req interface{}, info *grpc.Unary
 // based on certification extension oid 1.2.840.10070.8.1.
 func StreamAuthInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	if err := authorize(stream.Context(), info.FullMethod); err != nil {
-		return err
+		return status.Error(codes.PermissionDenied, err.Error())
 	}
 	return handler(srv, stream)
 }
