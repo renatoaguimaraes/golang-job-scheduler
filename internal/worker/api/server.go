@@ -35,6 +35,7 @@ func loadTLSCredentials(conf conf.Config) (credentials.TransportCredentials, err
 		Certificates: []tls.Certificate{serverCert},
 		ClientAuth:   tls.RequireAndVerifyClientCert,
 		ClientCAs:    certPool,
+		MinVersion:   tls.VersionTLS13,
 	}
 	return credentials.NewTLS(config), nil
 }
