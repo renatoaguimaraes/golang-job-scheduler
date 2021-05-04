@@ -21,21 +21,17 @@ func NewStartCommand(client proto.WorkerServiceClient) Runner {
 	}
 }
 
-func (c *StartCommand) Init(args []string) {
-	c.args = args
-}
-
-func (c *StartCommand) Run() {
+func (c *StartCommand) Run(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
 	command := proto.StartRequest{
-		Name: c.args[0],
-		Args: c.args[1:],
+		Name: args[0],
+		Args: args[1:],
 	}
 	res, err := c.client.Start(ctx, &command, grpc.WaitForReady(true))
-	if err == nil {
-		os.Stdout.WriteString(fmt.Sprintf("Job %v is started\n", res.JobID))
-	} else {
-		os.Stderr.WriteString(fmt.Sprintf("%v\n", err))
+	if err != nil {
+		return err
 	}
+	os.Stdout.WriteString(fmt.Sprintf("Job %v is started\n", res.JobID))
+	return nil
 }

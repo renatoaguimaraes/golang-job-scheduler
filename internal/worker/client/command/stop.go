@@ -21,20 +21,16 @@ func NewStopCommand(client proto.WorkerServiceClient) Runner {
 	}
 }
 
-func (c *StopCommand) Init(args []string) {
-	c.args = args
-}
-
-func (c *StopCommand) Run() {
+func (c *StopCommand) Run(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
 	command := proto.StopRequest{
 		JobID: c.args[0],
 	}
 	_, err := c.client.Stop(ctx, &command, grpc.WaitForReady(true))
-	if err == nil {
-		os.Stdout.WriteString(fmt.Sprintf("Job %v has been stopped\n", command.JobID))
-	} else {
-		os.Stderr.WriteString(fmt.Sprintf("%v\n", err))
+	if err != nil {
+		return err
 	}
+	os.Stdout.WriteString(fmt.Sprintf("Job %v has been stopped\n", command.JobID))
+	return nil
 }

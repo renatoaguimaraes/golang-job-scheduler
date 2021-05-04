@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"log"
 
 	"github.com/renatoaguimaraes/job-scheduler/internal/worker/proto"
 	"github.com/renatoaguimaraes/job-scheduler/pkg/worker/conf"
@@ -37,17 +36,17 @@ func loadTLSCredentials(config conf.Config) (credentials.TransportCredentials, e
 	return credentials.NewTLS(tlsConfig), nil
 }
 
-func NewWorkerClient(config conf.Config) proto.WorkerServiceClient {
+func NewWorkerClient(config conf.Config) (proto.WorkerServiceClient, error) {
 	tlsCredentials, err := loadTLSCredentials(config)
 	if err != nil {
-		log.Fatal("cannot load TLS credentials: ", err)
+		return nil, err
 	}
 	conn, err := grpc.Dial(
 		config.ServerAddress,
 		grpc.WithTransportCredentials(tlsCredentials),
 	)
 	if err != nil {
-		log.Fatalf("grpc.DialContext to %s failed: %v", config.ServerAddress, err)
+		return nil, err
 	}
-	return proto.NewWorkerServiceClient(conn)
+	return proto.NewWorkerServiceClient(conn), nil
 }

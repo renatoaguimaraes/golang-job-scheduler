@@ -14,5 +14,11 @@ func main() {
 	config.ServerCA = "cert/server-ca-cert.pem"
 	config.ClientCertificate = "cert/client-cert.pem"
 	config.ClientKey = "cert/client-key.pem"
-	command.Execute(config, os.Args[1:])
+	err := command.Execute(config, os.Args[1:])
+	if err != nil {
+		os.Stdout.WriteString(err.Error())
+		os.Exit(-1)
+		return
+	}
+	os.Exit(0)
 }

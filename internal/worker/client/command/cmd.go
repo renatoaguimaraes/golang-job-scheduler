@@ -1,38 +1,35 @@
 package command
 
 import (
+	"errors"
 	"fmt"
-	"os"
 
 	"github.com/renatoaguimaraes/job-scheduler/internal/worker/client"
 	"github.com/renatoaguimaraes/job-scheduler/pkg/worker/conf"
 )
 
 type Runner interface {
-	// Init initialize a runner with execution arguments.
-	//    - args: runner arguments
-	Init(args []string)
 	// Run runs a initialized runner.
-	Run()
+	Run(args []string) error
 }
 
-func Execute(config conf.Config, args []string) {
+func Execute(config conf.Config, args []string) error {
 	if len(args) < 1 {
-		os.Stderr.WriteString("you must pass a command")
-		return
+		return errors.New("you must pass a command")
 	}
-	c := client.NewWorkerClient(config)
+	client, err := client.NewWorkerClient(config)
+	if err != nil {
+		return err
+	}
 	cmds := map[string]Runner{
-		"start":  NewStartCommand(c),
-		"query":  NewQueryCommand(c),
-		"stop":   NewStopCommand(c),
-		"stream": NewStreamCommand(c),
+		"start":  NewStartCommand(client),
+		"query":  NewQueryCommand(client),
+		"stop":   NewStopCommand(client),
+		"stream": NewStreamCommand(client),
 	}
 	cmd, ok := cmds[args[0]]
 	if ok {
-		cmd.Init(args[1:])
-		cmd.Run()
-		return
+		return cmd.Run(args[1:])
 	}
-	os.Stderr.WriteString(fmt.Sprintf("unknown command: %s", cmd))
+	return fmt.Errorf("unknown command: %s", cmd)
 }

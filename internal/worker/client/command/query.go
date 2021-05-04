@@ -12,7 +12,6 @@ import (
 
 type QueryCommand struct {
 	client proto.WorkerServiceClient
-	args   []string
 }
 
 func NewQueryCommand(client proto.WorkerServiceClient) Runner {
@@ -21,20 +20,16 @@ func NewQueryCommand(client proto.WorkerServiceClient) Runner {
 	}
 }
 
-func (c *QueryCommand) Init(args []string) {
-	c.args = args
-}
-
-func (c *QueryCommand) Run() {
+func (c *QueryCommand) Run(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
 	command := proto.QueryRequest{
-		JobID: c.args[0],
+		JobID: args[0],
 	}
 	res, err := c.client.Query(ctx, &command, grpc.WaitForReady(true))
-	if err == nil {
-		os.Stdout.WriteString(fmt.Sprintf("Pid: %v Exit code: %v Exited: %v\n", res.Pid, res.ExitCode, res.Exited))
-	} else {
-		os.Stderr.WriteString(fmt.Sprintf("%v\n", err))
+	if err != nil {
+		return err
 	}
+	os.Stdout.WriteString(fmt.Sprintf("Pid: %v Exit code: %v Exited: %v\n", res.Pid, res.ExitCode, res.Exited))
+	return nil
 }

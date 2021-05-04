@@ -21,11 +21,7 @@ func NewStreamCommand(client proto.WorkerServiceClient) Runner {
 	}
 }
 
-func (c *StreamCommand) Init(args []string) {
-	c.args = args
-}
-
-func (c *StreamCommand) Run() {
+func (c *StreamCommand) Run(args []string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	command := proto.StreamRequest{
 		JobID: c.args[0],
@@ -33,19 +29,17 @@ func (c *StreamCommand) Run() {
 	res, err := c.client.Stream(ctx, &command, grpc.WaitForReady(true))
 	if err != nil {
 		cancel()
-		os.Stderr.WriteString(fmt.Sprintf("%v\n", err))
-		return
+		return err
 	}
 	// runs the streaming in backgroud
 	go func() {
 		for {
 			out, err := res.Recv()
-			if err == nil {
-				os.Stdout.WriteString(out.Output)
-			} else {
+			if err != nil {
 				os.Stderr.WriteString(fmt.Sprintf("%v\n", err))
 				return
 			}
+			os.Stdout.WriteString(out.Output)
 		}
 	}()
 	// waits for os signal to terminate the streaming
@@ -56,4 +50,5 @@ func (c *StreamCommand) Run() {
 		signal.Stop(sigchan)
 	}()
 	<-sigchan
+	return nil
 }
