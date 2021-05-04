@@ -45,7 +45,6 @@ func createServer(conf conf.Config, cred credentials.TransportCredentials) (*grp
 	if err != nil {
 		return nil, nil, err
 	}
-
 	grpcServer := grpc.NewServer(
 		grpc.Creds(cred),
 		grpc.UnaryInterceptor(UnaryAuthInterceptor),
