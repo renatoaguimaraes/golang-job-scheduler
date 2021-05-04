@@ -40,7 +40,7 @@ func loadTLSCredentials(conf conf.Config) (credentials.TransportCredentials, err
 	return credentials.NewTLS(config), nil
 }
 
-func CreateServer(conf conf.Config, cred credentials.TransportCredentials) (*grpc.Server, net.Listener, error) {
+func createServer(conf conf.Config, cred credentials.TransportCredentials) (*grpc.Server, net.Listener, error) {
 	lis, err := net.Listen("tcp", conf.ServerAddress)
 	if err != nil {
 		return nil, nil, err
@@ -62,7 +62,7 @@ func StartServer(conf conf.Config) error {
 	if err != nil {
 		return err
 	}
-	serv, lis, err := CreateServer(conf, cred)
+	serv, lis, err := createServer(conf, cred)
 	if err != nil {
 		return err
 	}

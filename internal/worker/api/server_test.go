@@ -26,7 +26,7 @@ func TestStartAuthnAuthzAdminUser(t *testing.T) {
 	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
 	assert.Nil(t, err)
 	// creates server
-	serv, lis, err := CreateServer(config, servercred)
+	serv, lis, err := createServer(config, servercred)
 	assert.Nil(t, err)
 	defer serv.Stop()
 	// starts the server
@@ -39,7 +39,7 @@ func TestStartAuthnAuthzAdminUser(t *testing.T) {
 	clientcred, err := loadClientCredentials(serverca, admincert, adminkey)
 	assert.Nil(t, err)
 	// connects to the server
-	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
+	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(clientcred))
 	assert.Nil(t, err)
 	// creates the client
 	client := proto.NewWorkerServiceClient(conn)
@@ -54,7 +54,7 @@ func TestStartAuthnAuthzUnauthorizedUser(t *testing.T) {
 	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
 	assert.Nil(t, err)
 	// creates server
-	serv, lis, err := CreateServer(config, servercred)
+	serv, lis, err := createServer(config, servercred)
 	assert.Nil(t, err)
 	defer serv.Stop()
 	// starts the server
@@ -85,7 +85,7 @@ func TestUntrustedUser(t *testing.T) {
 	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
 	assert.Nil(t, err)
 	// creates server
-	serv, lis, err := CreateServer(config, servercred)
+	serv, lis, err := createServer(config, servercred)
 	assert.Nil(t, err)
 	defer serv.Stop()
 	// starts the server
