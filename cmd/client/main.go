@@ -18,7 +18,6 @@ func main() {
 	if err != nil {
 		os.Stdout.WriteString(err.Error())
 		os.Exit(-1)
-		return
 	}
 	os.Exit(0)
 }
