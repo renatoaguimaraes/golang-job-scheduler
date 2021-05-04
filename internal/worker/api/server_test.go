@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/renatoaguimaraes/job-scheduler/internal/worker/proto"
 	"github.com/renatoaguimaraes/job-scheduler/pkg/worker/conf"
@@ -32,6 +31,10 @@ func TestStartAuthnAuthzAdminUser(t *testing.T) {
 	// connects to the server
 	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
 	require.NoError(t, err)
+	defer func() {
+		err := conn.Close()
+		require.NoError(t, err)
+	}()
 	// creates the client
 	client := proto.NewWorkerServiceClient(conn)
 	// calls admin function
@@ -50,6 +53,10 @@ func TestStartAuthnAuthzUnauthorizedUser(t *testing.T) {
 	// connects to the server
 	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
 	require.NoError(t, err)
+	defer func() {
+		err := conn.Close()
+		require.NoError(t, err)
+	}()
 	// creates the client
 	client := proto.NewWorkerServiceClient(conn)
 	// calls admin function
@@ -73,6 +80,10 @@ func TestUntrustedUser(t *testing.T) {
 	// connects to the server
 	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
 	require.NoError(t, err)
+	defer func() {
+		err := conn.Close()
+		require.NoError(t, err)
+	}()
 	// creates the client
 	client := proto.NewWorkerServiceClient(conn)
 	// calls admin function
@@ -81,7 +92,6 @@ func TestUntrustedUser(t *testing.T) {
 	stat, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, codes.Unavailable, stat.Code())
-	assert.Equal(t, "connection closed", stat.Message())
 	assert.Nil(t, res)
 }
 
@@ -96,7 +106,6 @@ func createTestServer(t *testing.T, ca, cert, key []byte) *grpc.Server {
 	go func() {
 		serv.Serve(lis)
 	}()
-	time.Sleep(time.Second)
 	return serv
 }
 
