@@ -24,7 +24,7 @@ var config = conf.Config{ServerAddress: "localhost:8080", LogFolder: os.TempDir(
 func TestStartAuthnAuthzAdminUser(t *testing.T) {
 	// load server credentials
 	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	// creates server
 	serv, lis, err := createServer(config, servercred)
 	assert.Nil(t, err)
