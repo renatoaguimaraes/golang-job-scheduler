@@ -49,7 +49,7 @@ func TestStartAuthnAuthzAdminUser(t *testing.T) {
 	assert.NotEmpty(t, res.JobID)
 }
 
-func TestStartAuthnAuthzUser(t *testing.T) {
+func TestStartAuthnAuthzUnauthorizedUser(t *testing.T) {
 	// load server credentials
 	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
 	assert.Nil(t, err)
