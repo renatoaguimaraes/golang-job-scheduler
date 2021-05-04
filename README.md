@@ -39,6 +39,7 @@ Prototype job worker service that provides an API to run arbitrary Linux process
 ![Architecture](assets/architecture.jpg)
 
 ## Test
+<<<<<<< HEAD
 
 ```sh
 $ make test
@@ -52,4 +53,9 @@ go build -o ./bin/worker-api cmd/api/main.go
 
 ```sh
 $ ./bin/worker-api
+=======
+
+```sh
+$ make test
+>>>>>>> library
 ```
