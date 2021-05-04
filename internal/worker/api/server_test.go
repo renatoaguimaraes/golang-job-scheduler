@@ -14,6 +14,7 @@ import (
 	"github.com/renatoaguimaraes/job-scheduler/pkg/worker/conf"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
@@ -76,6 +77,38 @@ func TestStartAuthnAuthzUser(t *testing.T) {
 	stat, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, "unauthorized, user does not have privileges enough", stat.Proto().GetMessage())
+	assert.Nil(t, res)
+}
+
+func TestUntrustedUser(t *testing.T) {
+	// load server credentials
+	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
+	assert.Nil(t, err)
+	// creates server
+	serv, lis, err := CreateServer(config, servercred)
+	assert.Nil(t, err)
+	defer serv.Stop()
+	// starts the server
+	go func() {
+		serv.Serve(lis)
+	}()
+	// waits server bind
+	time.Sleep(time.Second)
+	// load client credentials
+	clientcred, err := loadClientCredentials(serverca, unauthcert, unauthkey)
+	assert.Nil(t, err)
+	// connects to the server
+	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
+	assert.Nil(t, err)
+	// creates the client
+	client := proto.NewWorkerServiceClient(conn)
+	// calls admin function
+	res, err := client.Start(context.Background(), &proto.StartRequest{Name: "ls"})
+	assert.NotNil(t, err)
+	stat, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, int32(codes.Unavailable), stat.Proto().GetCode())
+	assert.Equal(t, "connection closed", stat.Proto().GetMessage())
 	assert.Nil(t, res)
 }
 
@@ -437,4 +470,90 @@ uepHBdLiUS+2D8nk9m2uWPjUBtq0kVRLlAzlk6zX2FfN1UzUKdkHH0cTWPXaShkG
 6XZIzKFM8Y+ZVJH4yhF5ZcQQWYeYF3/I0MrpMhtuTOdE7XwKj6HKX1I4wq9Q2pbX
 Yp6El/hEDKO9KH1yXilBM907i8bLNVqvmQFMdG+KmPbJz3TYOI5ZEYcmxrhzkYMK
 vauhSrsJEsHZbLbBbNOnkRljL1IiiZ0=
+-----END PRIVATE KEY-----`)
+
+var unauthcert = []byte(`-----BEGIN CERTIFICATE-----
+MIIFczCCA1ugAwIBAgIUFhOYWF6fyuq+HABQlUZIoINIWaQwDQYJKoZIhvcNAQEL
+BQAwZjELMAkGA1UEBhMCQlIxGDAWBgNVBAsMD1VuYXV0aG9yaXplZCBDQTESMBAG
+A1UEAwwJbG9jYWxob3N0MSkwJwYJKoZIhvcNAQkBFhpyZW5hdG9hZ3VpbWFyYWVz
+QGdtYWlsLmNvbTAeFw0yMTA1MDQwMzEzNDBaFw0yMTA3MDMwMzEzNDBaMGoxCzAJ
+BgNVBAYTAkJSMRwwGgYDVQQLDBNVbmF1dGhvcml6ZWQgQ2xpZW50MRIwEAYDVQQD
+DAlsb2NhbGhvc3QxKTAnBgkqhkiG9w0BCQEWGnJlbmF0b2FndWltYXJhZXNAZ21h
+aWwuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAq+4h5jmnadge
+dKCxW/ImVszI9ojvAXWxWUJwIp0ubEFk90L/cLijbF6b8c69hvFdhbJXVG4sXqw2
+royzfpIzLGGTEyl3fKoYmGDuojeHDWhmpGcM2sN8Pm9bIEJ53YhBeUiKFNNkL5Fp
+POdy8NTIhmg2yi4tEfu8L5xOn8M9FeApLVP29INY+v1T6VIXPL+khGBqt2YQPSwG
+e0y7YkUcxYKsrWmwnz8cnwOSA9PzeuNL5AcihWzX1JgXzvJ+ClWHtHLCYSkmkNa/
+QKtxC371SEANYDTixqy+KmhIVWPIjXaN4oLN+Y29vYzh0GhA8feJ4Tpy7Gmk8YNN
+g/Y1i4Ds295AJ/rLuZ3CrR1/WgRL9Tmfi3TkeFcB8dDfuLhMPDJdL+2KLKe753ok
+LFzhq1GEx+ARvnISHwLW9Av0va1EDAFmXSu6fqMgyT7w0Rc9ElyvXP8F0HSUzB5a
+OvV3V2QKjkqC3C3bBQzl9axu+eYjSFaJODSbwBxL9eZdrycZwti+VkSqubj7xg4r
+3QYcKqleRvWDTqj+l9LJEP0dqQJLOJIQdo++m+/HYQd5xfSL6+XpCOJN58Q71DYH
+RZZ3gzDQxCr2WILyYaXk1XRA7u0dg8vk3fsic/AELdxx73mbNjyiQlQX1JFJHhJ8
+pK5dMmJuhivGbv76Y2Voz3AIcEL5pGcCAwEAAaMVMBMwEQYHKoZIzlYIAQQGDAR1
+c2VyMA0GCSqGSIb3DQEBCwUAA4ICAQCdoDoJI1ml9kYYG8L019Ps7FC8DAcENS0s
+eMG1ck9+YPp5QRmLkV+242dQgJLkK+bEASK2RE00uFpaEVfCu3GpFuIo65nL+UPI
+BbgOejYhUOwZ0zNMMYoNW1R05kEzzJ3wVFw9FWH2kAP3hsYwKuthuhA6ryGCEUPJ
+NTeoDDSCFNlQ/KTgX1r888MOVfig70XW8ODxy/8iqD8IesNQdDX59mCT8gj+ikYS
+oqG3ZbQcuMNEv7OzD1CapleIQ7N4BotZq5nSNDdLpahUbKWwVX8+fh0nP5qLbWVu
+o+WBrqV1Pen+iq4bL+Ml28A043S/8/diju8fo2xYC+x9ayepi1F2E2QM9bPMz7iT
+oeGa6nVv2A0n1Bz9baVHJp555058qQGI5FWICryUBPDXDpeYQ+3B8pF6SAbZ2VD0
+aR95ndjxtzZkQDW204TrHGcPKxbxZJK8kZfGG9mk9KuKLriNKltaLCJiBKbpH7de
+2RLIttRrH5Olu16MIu+U0lzbSjSHwb/qweZ0KQ3POyH6OTfmnCL2P0agQJdUeHN3
+eVMcxGrYjabFsGAASk7Hwp93gfb39nMMIv/MvZ69A8W2LF4RrlahjKbyC4GVe8jC
+qPJ3P3NlUyf2RRV1wQAIn72Na+XaQlGT3hRBJVXkUKsFvFFuOJy8bny99t9XHTZK
+VcFOvd7irw==
+-----END CERTIFICATE-----`)
+
+var unauthkey = []byte(`-----BEGIN PRIVATE KEY-----
+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
+lDB2NY6XhiC7TZgpR2y07TPkioq1kA==
 -----END PRIVATE KEY-----`)
