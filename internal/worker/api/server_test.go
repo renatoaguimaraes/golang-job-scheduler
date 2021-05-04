@@ -76,7 +76,7 @@ func TestStartAuthnAuthzUser(t *testing.T) {
 	stat, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, "unauthorized, user does not have privileges enough", stat.Proto().GetMessage())
-	assert.Empty(t, res.JobID)
+	assert.Nil(t, res)
 }
 
 func loadServerCredentials(ca, cert, key []byte) (credentials.TransportCredentials, error) {
