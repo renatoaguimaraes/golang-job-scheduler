@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestStartAuthnAuthz(t *testing.T) {
+func TestStartAuthnAuthzAdminUser(t *testing.T) {
 	// load server credentions
 	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
 	assert.Nil(t, err)
@@ -33,7 +33,7 @@ func TestStartAuthnAuthz(t *testing.T) {
 	// waits server bind
 	time.Sleep(time.Second)
 	// load client credentions
-	clientcred, err := loadClientCredentials(serverca, clientcert, clientkey)
+	clientcred, err := loadClientCredentials(serverca, admincert, adminkey)
 	assert.Nil(t, err)
 	// connects to the server
 	conn, err := grpc.Dial(config.ServerAddress, grpc.WithTransportCredentials(clientcred))
@@ -236,7 +236,7 @@ pATYfD3Bl/s0GzGMZ4IbyvNQL3JUJo4YZcr3CwKTmy69yKOQHiT94uTDEbrfGmth
 +RfawT8=
 -----END CERTIFICATE-----`)
 
-var clientcert = []byte(`-----BEGIN CERTIFICATE-----
+var admincert = []byte(`-----BEGIN CERTIFICATE-----
 MIIFZjCCA06gAwIBAgIUVDESpCW7CAsDHuKMEWkO26dRwCMwDQYJKoZIhvcNAQEL
 BQAwYDELMAkGA1UEBhMCQlIxEjAQBgNVBAsMCUNsaWVudCBDQTESMBAGA1UEAwwJ
 bG9jYWxob3N0MSkwJwYJKoZIhvcNAQkBFhpyZW5hdG9hZ3VpbWFyYWVzQGdtYWls
@@ -268,7 +268,7 @@ IYP8O4Oi0Lons8Fr6KLKDbDOJRrMSR7e3FG3c02oZ2Nzk6833fpo+iIrdN16gOZB
 ORSvoUyYq8SYbgcHkxN7XJ/StYE0g4uhn39+/fp8xjB3nsTLFlkQE86s
 -----END CERTIFICATE-----`)
 
-var clientkey = []byte(`-----BEGIN PRIVATE KEY-----
+var adminkey = []byte(`-----BEGIN PRIVATE KEY-----
 MIIJRAIBADANBgkqhkiG9w0BAQEFAASCCS4wggkqAgEAAoICAQD7XbygX4jAFrDP
 jr97il6ZmKpHzDf6PkPFl6zqr9Y91bbPryP+7o1k909H9DcOGs3kQc3Eraqkw5pp
 vQcjubfqOgtPvoxK6eVgLHzQSxlIcFEyNZuWYh77cikOod5KpJJYdwcO6jf6iq0+
