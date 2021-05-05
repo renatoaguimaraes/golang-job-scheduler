@@ -122,6 +122,7 @@ func loadServerCredentials(ca, cert, key []byte) (credentials.TransportCredentia
 		Certificates: []tls.Certificate{serverCert},
 		ClientAuth:   tls.RequireAndVerifyClientCert,
 		ClientCAs:    certPool,
+		MinVersion:   tls.VersionTLS13,
 	}
 	return credentials.NewTLS(config), nil
 }
@@ -138,6 +139,7 @@ func loadClientCredentials(ca, cert, key []byte) (credentials.TransportCredentia
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{clientCert},
 		RootCAs:      certPool,
+		MinVersion:   tls.VersionTLS13,
 	}
 	return credentials.NewTLS(tlsConfig), nil
 }
