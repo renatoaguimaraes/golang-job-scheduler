@@ -5,15 +5,17 @@ import (
 	"errors"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 )
 
 // UnaryAuthInterceptor intercept unary calls to authorize the user
 // based on certification extension oid 1.2.840.10070.8.1.
 func UnaryAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	if err := authorize(ctx, info.FullMethod); err != nil {
-		return nil, err
+		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 	return handler(ctx, req)
 }
@@ -22,7 +24,7 @@ func UnaryAuthInterceptor(ctx context.Context, req interface{}, info *grpc.Unary
 // based on certification extension oid 1.2.840.10070.8.1.
 func StreamAuthInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	if err := authorize(stream.Context(), info.FullMethod); err != nil {
-		return err
+		return status.Error(codes.PermissionDenied, err.Error())
 	}
 	return handler(srv, stream)
 }
@@ -42,11 +44,12 @@ func authorize(ctx context.Context, method string) error {
 	}
 	// access the leaf certificate to get user roles
 	certs := tlsInfo.State.VerifiedChains
-	// TODO validate
-	peercert := certs[0][0]
+	if len(certs) == 0 || len(certs[0]) == 0 {
+		return errors.New("missing certificate chain")
+	}
 	// find user roles from certificate extensions
 	var roles []string
-	for _, ext := range peercert.Extensions {
+	for _, ext := range certs[0][0].Extensions {
 		if oid := OidToString(ext.Id); IsOidRole(oid) {
 			roles = ParseRoles(string(ext.Value))
 			break

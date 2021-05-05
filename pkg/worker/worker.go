@@ -112,10 +112,10 @@ func (w *worker) Start(command Command) (string, error) {
 		return jobID, err
 	}
 	// create and store the job
-	w.mtx.Lock()
-	defer w.mtx.Unlock()
 	job := Job{ID: jobID, Cmd: cmd, Status: &Status{Pid: cmd.Process.Pid}}
+	w.mtx.Lock()
 	w.jobs[jobID] = &job
+	w.mtx.Unlock()
 	// update the job status in background
 	go func() {
 		if err := job.Cmd.Wait(); err != nil {

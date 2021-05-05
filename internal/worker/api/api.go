@@ -57,7 +57,7 @@ func (s *workerServer) Stream(r *proto.StreamRequest, stream proto.WorkerService
 			return stream.Context().Err()
 		case log, ok := <-logchan:
 			if !ok {
-				return status.Error(codes.Internal, "the log channel was closed")
+				return nil
 			}
 			if err := stream.SendMsg(&proto.StreamResponse{Output: log}); err != nil {
 				return status.Error(codes.Internal, err.Error())

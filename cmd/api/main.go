@@ -16,6 +16,6 @@ func main() {
 	flag.StringVar(&config.ServerKey, "key", "cert/server-key.pem", "server key path")
 	flag.Parse()
 	if err := api.StartServer(config); err != nil {
-		log.Printf("fail to start server, %v", err)
+		log.Fatalf("fail to start server, %v", err)
 	}
 }
