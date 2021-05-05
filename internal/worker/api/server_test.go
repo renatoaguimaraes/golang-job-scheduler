@@ -23,7 +23,8 @@ var config = conf.Config{ServerAddress: "localhost:8080", LogFolder: os.TempDir(
 
 func TestStartAuthnAuthzAdminUser(t *testing.T) {
 	// creates server
-	serv := createTestServer(t, clientca, servercert, serverkey)
+	serv, err := createTestServer(t, clientca, servercert, serverkey)
+	require.NoError(t, err)
 	defer serv.Stop()
 	// load client credentials
 	clientcred, err := loadClientCredentials(serverca, admincert, adminkey)
@@ -45,7 +46,8 @@ func TestStartAuthnAuthzAdminUser(t *testing.T) {
 
 func TestStartAuthnAuthzUnauthorizedUser(t *testing.T) {
 	// creates server
-	serv := createTestServer(t, clientca, servercert, serverkey)
+	serv, err := createTestServer(t, clientca, servercert, serverkey)
+	require.NoError(t, err)
 	defer serv.Stop()
 	// load client credentials
 	clientcred, err := loadClientCredentials(serverca, usercert, userkey)
@@ -72,7 +74,8 @@ func TestStartAuthnAuthzUnauthorizedUser(t *testing.T) {
 
 func TestUntrustedUser(t *testing.T) {
 	// creates server
-	serv := createTestServer(t, clientca, servercert, serverkey)
+	serv, err := createTestServer(t, clientca, servercert, serverkey)
+	require.NoError(t, err)
 	defer serv.Stop()
 	// load client credentials
 	clientcred, err := loadClientCredentials(serverca, unauthcert, unauthkey)
@@ -95,18 +98,23 @@ func TestUntrustedUser(t *testing.T) {
 	assert.Nil(t, res)
 }
 
-func createTestServer(t *testing.T, ca, cert, key []byte) *grpc.Server {
+func createTestServer(t *testing.T, ca, cert, key []byte) (*grpc.Server, error) {
 	// load server credentials
 	servercred, err := loadServerCredentials(clientca, servercert, serverkey)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, err
+	}
 	// creates server
 	serv, lis, err := createServer(config, servercred)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, err
+	}
 	// starts the server
 	go func() {
-		serv.Serve(lis)
+		err := serv.Serve(lis)
+		require.NoError(t, err)
 	}()
-	return serv
+	return serv, nil
 }
 
 func loadServerCredentials(ca, cert, key []byte) (credentials.TransportCredentials, error) {
