@@ -53,3 +53,38 @@ go build -o ./bin/worker-api cmd/api/main.go
 ```sh
 $ ./bin/worker-api
 ```
+
+## Build and run Client
+
+```sh
+$ make client
+go build -o ./bin/worker-client cmd/client/main.go
+```
+
+```sh
+$ ./bin/worker-client start "bash" "-c" "while true; do date; sleep 1; done"
+Job 9a8cb077-22da-488f-98b4-d2fb51ba4fc9 is started
+```
+
+```sh
+$ ./bin/worker-client query 9a8cb077-22da-488f-98b4-d2fb51ba4fc9
+Pid: 1494556 Exit code: 0 Exited: false
+```
+
+```sh
+$ ./bin/worker-client stream 9a8cb077-22da-488f-98b4-d2fb51ba4fc9
+Sun 02 May 2021 05:54:29 PM -03
+Sun 02 May 2021 05:54:30 PM -03
+Sun 02 May 2021 05:54:31 PM -03
+Sun 02 May 2021 05:54:32 PM -03
+Sun 02 May 2021 05:54:33 PM -03
+Sun 02 May 2021 05:54:34 PM -03
+Sun 02 May 2021 05:54:35 PM -03
+Sun 02 May 2021 05:54:36 PM -03
+Sun 02 May 2021 05:54:37 PM -03
+```
+
+```sh
+./bin/worker-client stop 9a8cb077-22da-488f-98b4-d2fb51ba4fc9
+Job 79d95817-7228-4c36-8054-6c29513841b4 has been stopped
+```
