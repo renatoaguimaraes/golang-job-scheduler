@@ -8,6 +8,16 @@ type Config struct {
 	LogFolder string
 	// LogChunckSize size in bytes for each log chunck read from log file
 	LogChunckSize int
+
+	ServerAddress string
+
+	ServerCA          string
+	ServerCertificate string
+	ServerKey         string
+
+	ClientCA          string
+	ClientCertificate string
+	ClientKey         string
 }
 
 func NewConfig() Config {

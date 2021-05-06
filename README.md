@@ -43,3 +43,13 @@ Prototype job worker service that provides an API to run arbitrary Linux process
 ```sh
 $ make test
 ```
+## Build and run API
+
+```sh
+$ make api
+go build -o ./bin/worker-api cmd/api/main.go
+```
+
+```sh
+$ ./bin/worker-api
+```
