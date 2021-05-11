@@ -10,21 +10,17 @@ Prototype job worker service that provides an API to run arbitrary Linux process
 
 ### Library
 
-*   Worker library with methods to start/stop/query status and get an output of a running job.
+The library (Worker) is a reusable Golang package that interacts with Linux OS to execute arbitrary processes (Jobs). The Worker is responsible for the business logic to start, stop processes, stream the process output, and handle process errors.
+The Worker will keep the process status in memory, in a local map, to update the process status when it's finished. Once the Job state is not persistent, the Worker will lose the data if the Worker goes down.
+Most of the time, the users want to see the full log content to check if the job performs as expected, doing another API call to stream the output. The Worker should write the process output (stderr/stdout) on the disk as a log file. On the other hand, the old log files consume disk space which can crash the system when no more space is left. To address it, we can implement a log rotation, purge policy, or use a distributed file system (like Amazon S3) to keep the system healthy. For now the logs will be stored under the /tmp folder, but the log folder should be parameterized in the configuration file. 
 
 ### API
 
-*   Use GRPC for API to start/stop/get status of a running process;
-*   Add streaming log output of a running job process; 
-*   Use mTLS and verify client certificate; 
-*   Set up a strong set of cipher suites for TLS and a good crypto setup for certificates;
-*   Authentication and Authorization.
+The API is a gRPC server responsible for interacting with the Worker Library to start/stop/query processes and also consumed by the remote Client. The API is also responsible for providing authentication, authorization, and secure communication between the client and server.
 
 ### Client	
 
-*   Client command should be able to connect to worker service and schedule several jobs. 
-*   The client should be able to query the results of the job execution and fetch the logs. 
-*   The client should be able to stream the logs.
+The Client is a command line interface where the user interacts to schedule remote Linux jobs. The CLI provides communication between the user and Worker Library through the gRPC.
 
 ## Security
 
