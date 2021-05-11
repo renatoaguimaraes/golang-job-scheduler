@@ -30,9 +30,6 @@ Prototype job worker service that provides an API to run arbitrary Linux process
 
 *   Database to persist the worker state;
 *   Log rotation, purge data policy, distributed file system;
-*   Authorization server;
-*   Cluster setup;
-*   Configuration files.
 
 ## Design Proposal 
 
