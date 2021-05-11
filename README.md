@@ -26,6 +26,38 @@ Prototype job worker service that provides an API to run arbitrary Linux process
 *   The client should be able to query the results of the job execution and fetch the logs. 
 *   The client should be able to stream the logs.
 
+## Security
+
+### Transport
+
+The Transport Layer Security (TLS), version 1.3, provides privacy and data integrity in secure communication between the client and server.
+
+### Authentication
+
+The authentication will be provided by mTLS. The following assets will be generated, using the openssl v1.1.1k, to support the authorization schema:
+Server CA private key and self-signed certificate
+Server private key and certificate signing request (CSR)
+Server signed certificate, based on Server CA private key and Server CSR
+Client CA private key and self-signed certificate
+Client private key and certificate signing request (CSR)
+Client signed certificate, based on Client CA private key and Client CSR
+The authentication process checks the certificate signature, finding a CA certificate with a subject field that matches the issuer field of the target certificate, once the proper authority certificate is found, the validator checks the signature on the target certificate using the public key in the CA certificate. If the signature check fails, the certificate is invalid and the connection will not be established. Both client and server execute the same process to validate each other. Intermediate certificates won't be used.
+
+### Authorization
+The user roles will be added into the client certificate as an extension, so the gRPC server interceptors will read and check the roles to authorize the user, the roles available are reader and writer, the writer will be authorized do start, stop, query and stream operations and the reader will be authorized just to query and stream operations available on the API. A memory map will keep the name of the gRPC method and the respective roles authorized to execute it.
+The X.509 v3 extensions will be used to add the user role to the certificate. For that, the extension attribute roleOid 1.2.840.10070.8.1 = ASN1:UTF8String, must be requested in the Certificate Signing Request (CSR), when the user certificate is created, the user roles must be informed when the CA signs the the CSR. The information after UTF8String: is encoded inside of the x509 certificate under the given OID.
+
+#### gRPC interceptors
+* UnaryInterceptor
+* StreamInterceptor
+
+#### Certificates
+* X.509
+* Signature Algorithm: sha256WithRSAEncryption
+* Public Key Algorithm: rsaEncryption
+* RSA Public-Key: (4096 bit)
+* roleOid 1.2.840.10070.8.1 = ASN1:UTF8String (for the client certificate)
+
 ## Out of scope
 
 *   Database to persist the worker state;
