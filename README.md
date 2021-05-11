@@ -14,9 +14,107 @@ The library (Worker) is a reusable Golang package that interacts with Linux OS t
 The Worker will keep the process status in memory, in a local map, to update the process status when it's finished. Once the Job state is not persistent, the Worker will lose the data if the Worker goes down.
 Most of the time, the users want to see the full log content to check if the job performs as expected, doing another API call to stream the output. The Worker should write the process output (stderr/stdout) on the disk as a log file. On the other hand, the old log files consume disk space which can crash the system when no more space is left. To address it, we can implement a log rotation, purge policy, or use a distributed file system (like Amazon S3) to keep the system healthy. For now the logs will be stored under the /tmp folder, but the log folder should be parameterized in the configuration file. 
 
+```golang
+// Command is a job request with the program name and arguments.
+type Command struct {
+    // Command name
+    Name string
+    // Command arguments
+    Args []string
+}
+
+// Job represents an arbitrary Linux process schedule by the Worker.
+type Job struct {
+    // ID job identifier
+    ID string
+    // Cmd started
+    Cmd *exec.Cmd
+    // Status of the process.
+    Status *Status
+}
+
+// Status of the process.
+type Status struct {
+    // Process identifier
+    Pid int
+    // ExitCode of the exited process, or -1 if the process hasn't
+    // exited or was terminated by a signal
+    ExitCode int
+    // Exited reports whether the program has exited
+    Exited bool
+}
+
+// Worker defines the basic operations to manage Jobs.
+type Worker interface {
+    // Start creates a Linux process.
+    //    - command: command to be executed 
+    // It returns the job ID and the execution error encountered.
+    Start(command Command) (jobID string, err error)
+    // Stop a running Job which kills a running process.
+    //    - ID: Job identifier
+    // It returns the execution error encountered.
+    Stop(jobID string) (err error)
+    // Query a Job to check the current status.
+    //    - ID: Job identifier
+    // It returns process status and the execution error encountered.
+    Query(jobID string) (status Status, err error)
+    // Streams the process output.
+    //    - ctx: context to cancel the log stream
+    //    - ID: Job identifier
+    // It returns a chan to stream process stdout/stderr and the
+    // execution error encountered.
+    Stream(ctx context.Context, jobID string) (logchan chan string, err error)
+}
+```
 ### API
 
 The API is a gRPC server responsible for interacting with the Worker Library to start/stop/query processes and also consumed by the remote Client. The API is also responsible for providing authentication, authorization, and secure communication between the client and server.
+
+```protobuf
+syntax = "proto3";
+option go_package = "github.com/renatoaguimaraes/job-scheduler/worker/internal/proto";
+
+message StartRequest {
+  string name = 1;
+  repeated string args = 2;
+}
+
+message StartResponse {
+  string jobID = 1;
+}
+
+message StopRequest {
+  string jobID = 1;
+}
+
+message StopResponse {
+}
+
+message QueryRequest {
+  string jobID = 1;
+}
+
+message QueryResponse {
+  int32 pid = 1;
+  int32 exitCode = 2;
+  bool exited = 3;
+}
+
+message StreamRequest {
+  string jobID = 1;
+}
+
+message StreamResponse {
+  string output = 1;
+}
+
+service WorkerService {
+  rpc Start(StartRequest) returns (StartResponse);
+  rpc Stop(StopRequest) returns (StopResponse);
+  rpc Query(QueryRequest) returns (QueryResponse);
+  rpc Stream(StreamRequest) returns (stream StreamResponse);
+}
+```
 
 ### Client	
 
