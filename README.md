@@ -35,12 +35,14 @@ The Transport Layer Security (TLS), version 1.3, provides privacy and data integ
 ### Authentication
 
 The authentication will be provided by mTLS. The following assets will be generated, using the openssl v1.1.1k, to support the authorization schema:
-Server CA private key and self-signed certificate
-Server private key and certificate signing request (CSR)
-Server signed certificate, based on Server CA private key and Server CSR
-Client CA private key and self-signed certificate
-Client private key and certificate signing request (CSR)
-Client signed certificate, based on Client CA private key and Client CSR
+
+* Server CA private key and self-signed certificate
+* Server private key and certificate signing request (CSR)
+* Server signed certificate, based on Server CA private key and Server CSR
+* Client CA private key and self-signed certificate
+* Client private key and certificate signing request (CSR)
+* Client signed certificate, based on Client CA private key and Client CSR
+
 The authentication process checks the certificate signature, finding a CA certificate with a subject field that matches the issuer field of the target certificate, once the proper authority certificate is found, the validator checks the signature on the target certificate using the public key in the CA certificate. If the signature check fails, the certificate is invalid and the connection will not be established. Both client and server execute the same process to validate each other. Intermediate certificates won't be used.
 
 ### Authorization
