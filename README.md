@@ -176,7 +176,7 @@ Client-side load balancing is aware of multiple backend servers and chooses one 
 The thicker client places more of the load balancing logic in the client, a list of servers would be either statically configured in the client.
 External load-balancing is the primary mechanism for load-balancing in gRPC, where an external load balancer provides simple clients with an up-to-date list of servers.
 
-## Design Proposal 
+## Architecture 
 
 ![Architecture](assets/architecture.jpg)
 
