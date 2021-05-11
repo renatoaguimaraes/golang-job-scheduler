@@ -158,6 +158,18 @@ The X.509 v3 extensions will be used to add the user role to the certificate. Fo
 For now, the client will connect with just a single Worker node. Nevertheless, for a production-grade system, the best choice is the External Load Balancer approach.
 The Worker API can run in a cluster mode with several worker instances distributed over several nodes/containers. On the other hand, the Client must send requests to the same Worker for a specific job, creating an affinity to interact with that later.
 
+|      | Proxy                                       | Client Side                                                                                |  
+| ---- | ------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Pos  | Simple client                               |                                                                                            |
+|      | No client-side awareness of backend         | High performance because elimination of extra hop                                          |
+|      |                                             |                                                                                            |
+| Cons | LB is in the data path                      | Complex client                                                                             |  
+|      | Higher latency                              | Client keeps track of server load and health                                               | 
+|      | LB throughput may limit scalability         | Client implements load balancing algorithm                                                 |  
+|      |                                             | Per-language implementation and maintenance burden                                         |
+|      |                                             | Client needs to be trusted, or the trust boundary needs to be handled by a lookaside LB    |  
+
+
 ### Trade-offs
 Proxy Load balancer distributes the RPC call to one of the available backend servers that implement the actual logic for serving the call. The proxy model is inefficient when considering heavy request services like storage.
 Client-side load balancing is aware of multiple backend servers and chooses one to use for each RPC. For the client-side strategy, there are two models available, the thicker client and external load balancer. 
