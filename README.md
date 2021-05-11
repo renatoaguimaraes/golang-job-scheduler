@@ -1,6 +1,6 @@
 # Job Scheduler
 
-[![CI](https://github.com/renatoaguimaraes/job-scheduler/actions/workflows/ci.yml/badge.svg?branch=library)](https://github.com/renatoaguimaraes/job-scheduler/actions/workflows/ci.yml)
+[![CI](https://github.com/renatoaguimaraes/job-scheduler/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/renatoaguimaraes/job-scheduler/actions/workflows/ci.yml)
 
 ## Summary
 
